@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>身边的概率论</title>
+<style>
+:root{color-scheme:light dark;--bg:#f2f5f9;--surface:#fff;--ink:#1b2a41;--muted:#5b6b82;--line:#d5dde8;--accent:#0f6f8a;--soft:#dff0f5;--bar2:#e0a526}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1722;--surface:#17212f;--ink:#e6edf6;--muted:#97a6bb;--line:#2b3a50;--accent:#4fc0dc;--soft:#16323d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+h1{font:700 clamp(26px,6vw,36px)/1.25 "Songti SC","Noto Serif SC",serif;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 20px}
+nav{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px}
+nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+section{display:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+section.on{display:block}
+h2{font:700 23px/1.3 "Songti SC","Noto Serif SC",serif;margin:0 0 10px}
+h3{font-size:15px;margin:16px 0 2px;color:var(--accent)}
+p{margin:4px 0}
+.q{border-left:4px solid var(--accent);background:var(--soft);padding:8px 14px;border-radius:0 8px 8px 0;margin:8px 0}
+.lab{border:1px dashed var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0}
+.row label{min-width:130px;font-size:14px}
+.row input[type=range]{flex:1;min-width:140px;accent-color:var(--accent)}
+.row output{min-width:64px;font-weight:700;text-align:right}
+.big{font:700 32px/1.2 "Songti SC","Noto Serif SC",serif;color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-size:15px;cursor:pointer}
+.note{color:var(--muted);font-size:14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+@media(max-width:520px){.cols{grid-template-columns:1fr}.row label{min-width:100%}}
+.cell{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.meter{height:12px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.hist{display:flex;align-items:flex-end;gap:2px;height:100px;margin-top:10px}
+.hist b{flex:1;background:var(--accent);min-width:2px;border-radius:2px 2px 0 0}
+.hist b.hit{background:var(--bar2)}
+code{background:var(--soft);padding:1px 6px;border-radius:4px;font-size:.92em}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>身边的概率论</h1>
+<p class="lead">5 个学习生活中的概率案例，拖动滑块或点击按钮就能验证。</p>
+<nav role="tablist" id="nav"></nav>
+
+<section>
+<h2>班里有人同一天生日吗？</h2>
+<h3>背景</h3>
+<p>班长说："咱们班 40 人，至少有两人生日相同。"一年 365 天，这个赌听起来很冒险，其实他大概率会赢。</p>
+<div class="q">问：n 个人中至少两人同生日的概率？</div>
+<h3>解答</h3>
+<p>算对立事件"全都不同"：<code>P(全不同) = (365/365)·(364/365)·…·((365−n+1)/365)</code></p>
+<p>所以 <code>P = 1 − P(全不同)</code>。40 人有 780 对组合，每对都可能撞上，概率远超直觉（23 人就过 50%）。</p>
+<div class="lab">
+<div class="row"><label for="b-n">班级人数</label><input id="b-n" type="range" min="2" max="100" value="40"><output id="b-nv"></output></div>
+<div class="big" id="b-p"></div><div class="meter"><i id="b-m"></i></div>
+<div class="row"><button class="btn" id="b-sim">模拟 2000 个班级</button><span id="b-res" class="note"></span></div>
+</div>
+</section>
+
+<section>
+<h2>体检阳性，真的患病了吗？</h2>
+<h3>背景</h3>
+<p>某病患病率很低，检测"准确率 95%"。你测出阳性，但这不等于有 95% 概率患病。</p>
+<div class="q">问：阳性者真正患病的概率？</div>
+<h3>解答</h3>
+<p>用贝叶斯公式：<code>P(病|阳) = P(阳|病)P(病) / [P(阳|病)P(病) + P(阳|健)P(健)]</code></p>
+<p>换成"10000 人"来数：患病率低时，健康人基数大，误报的人数会超过真患者。</p>
+<div class="lab">
+<div class="row"><label for="y-p">患病率</label><input id="y-p" type="range" min="0.1" max="30" step="0.1" value="1"><output id="y-pv"></output></div>
+<div class="row"><label for="y-s">灵敏度</label><input id="y-s" type="range" min="50" max="100" step="0.5" value="95"><output id="y-sv"></output></div>
+<div class="row"><label for="y-c">特异度</label><input id="y-c" type="range" min="50" max="100" step="0.5" value="95"><output id="y-cv"></output></div>
+<div class="big" id="y-r"></div>
+<div class="cols"><div class="cell" id="y-a"></div><div class="cell" id="y-b"></div></div>
+<p class="note" id="y-t"></p>
+</div>
+</section>
+
+<section>
+<h2>三扇门：要不要换？</h2>
+<h3>背景</h3>
+<p>三扇门，一扇有奖。你选了 1 号，主持人（知道答案）打开一扇空门，问你换不换。</p>
+<div class="q">问：换门和不换，哪个赢面大？</div>
+<h3>解答</h3>
+<p>一开始选对的概率是 1/3，选错是 2/3。选错时，主持人排除了另一扇空门，剩下的必是奖品。</p>
+<p>所以<b>不换赢 1/3，换赢 2/3</b>。</p>
+<div class="lab">
+<div class="row"><button class="btn" id="m-go">模拟 1000 局</button><button class="btn" id="m-clr" style="background:var(--muted)">清零</button></div>
+<div class="cols">
+<div class="cell"><b>不换</b><div class="big" id="m-sr">—</div><div class="note" id="m-st"></div></div>
+<div class="cell"><b>换</b><div class="big" id="m-wr">—</div><div class="note" id="m-wt"></div></div>
+</div>
+</div>
+</section>
+
+<section>
+<h2>选择题蒙对能及格吗？</h2>
+<h3>背景</h3>
+<p>试卷 n 道四选一选择题，60% 及格。你会做 s 题，其余全蒙。</p>
+<div class="q">问：能及格的概率？</div>
+<h3>解答</h3>
+<p>蒙的题数 N = n − s，蒙对数 X ~ B(N, 1/4)：<code>P(X=k) = C(N,k)(1/4)^k(3/4)^(N−k)</code></p>
+<p>及格需 X ≥ ⌈0.6n⌉ − s，对这段（黄色柱）求和即可。</p>
+<div class="lab">
+<div class="row"><label for="c-n">总题数</label><input id="c-n" type="range" min="10" max="50" value="20"><output id="c-nv"></output></div>
+<div class="row"><label for="c-s">会做题数</label><input id="c-s" type="range" min="0" max="50" value="8"><output id="c-sv"></output></div>
+<p class="note" id="c-need"></p>
+<div class="big" id="c-p"></div>
+<div class="hist" id="c-h"></div>
+</div>
+</section>
+
+<section>
+<h2>抽卡 100 次一定出货吗？</h2>
+<h3>背景</h3>
+<p>出货率 1%，抽 100 次，期望正好 1 个，是不是稳了？</p>
+<div class="q">问：抽 n 次至少中一次的概率？平均要抽几次？</div>
+<h3>解答</h3>
+<p><code>P(至少一次) = 1 − (1−p)^n</code>，首次中奖的期望次数 <code>E = 1/p</code>。</p>
+<p>p = 1%、n = 100 时，成功率只有 63.4%。期望是长期平均，不是保证。</p>
+<div class="lab">
+<div class="row"><label for="g-p">单次概率</label><input id="g-p" type="range" min="0.1" max="10" step="0.1" value="1"><output id="g-pv"></output></div>
+<div class="row"><label for="g-n">抽数</label><input id="g-n" type="range" min="1" max="500" value="100"><output id="g-nv"></output></div>
+<div class="big" id="g-r"></div><div class="meter"><i id="g-m"></i></div>
+<p class="note" id="g-e"></p>
+<div class="row"><button class="btn" id="g-sim">模拟 1000 位玩家</button></div>
+<p class="note" id="g-res"></p>
+</div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const pct=(x,d=1)=>(x*100).toFixed(d)+"%";
+const titles=["生日悖论","体检与贝叶斯","三门问题","选择题蒙答","抽卡与期望"];
+const secs=document.querySelectorAll("section");
+titles.forEach((t,i)=>{const b=document.createElement("button");b.textContent=t;b.setAttribute("role","tab");b.onclick=()=>show(i);$("nav").appendChild(b)});
+function show(i){secs.forEach((s,j)=>s.classList.toggle("on",i===j));[...$("nav").children].forEach((b,j)=>b.setAttribute("aria-selected",i===j))}
+show(0);
+
+function bp(n){let q=1;for(let i=0;i<n;i++)q*=(365-i)/365;return 1-q}
+function bUpd(){const n=+$("b-n").value,p=bp(n);$("b-nv").textContent=n+" 人";$("b-p").textContent=pct(p);$("b-m").style.width=p*100+"%"}
+$("b-n").oninput=bUpd;bUpd();
+$("b-sim").onclick=()=>{const n=+$("b-n").value;let hit=0;for(let t=0;t<2000;t++){const s=new Set();for(let i=0;i<n;i++){const x=Math.floor(Math.random()*365);if(s.has(x)){hit++;break}s.add(x)}}
+$("b-res").textContent=`${hit}/2000 个班出现同生日，频率 ${pct(hit/2000)}（理论 ${pct(bp(n))}）`};
+
+function yUpd(){const p=$("y-p").value/100,s=$("y-s").value/100,c=$("y-c").value/100;
+$("y-pv").textContent=pct(p);$("y-sv").textContent=pct(s);$("y-cv").textContent=pct(c);
+const N=1e4,sick=N*p,tp=sick*s,h=N-sick,fp=h*(1-c),pos=tp+fp;
+$("y-r").textContent="阳性者患病概率 "+pct(pos?tp/pos:0);
+$("y-a").innerHTML=`<b>患者 ${Math.round(sick)} 人</b><br>检出 ${Math.round(tp)}，漏检 ${Math.round(sick-tp)}`;
+$("y-b").innerHTML=`<b>健康者 ${Math.round(h)} 人</b><br>误报 ${Math.round(fp)}，正确 ${Math.round(h-fp)}`;
+$("y-t").textContent=`阳性共 ${Math.round(pos)} 人，真患者 ${Math.round(tp)} 人。`}
+["y-p","y-s","y-c"].forEach(k=>$(k).oninput=yUpd);yUpd();
+
+let M={n:0,s:0,w:0};
+$("m-go").onclick=()=>{for(let i=0;i<1000;i++){M.n++;if(Math.floor(Math.random()*3)===Math.floor(Math.random()*3))M.s++;else M.w++}
+$("m-sr").textContent=pct(M.s/M.n);$("m-wr").textContent=pct(M.w/M.n);$("m-st").textContent=`${M.s}/${M.n} 局`;$("m-wt").textContent=`${M.w}/${M.n} 局`};
+$("m-clr").onclick=()=>{M={n:0,s:0,w:0};["m-sr","m-wr"].forEach(k=>$(k).textContent="—");["m-st","m-wt"].forEach(k=>$(k).textContent="")};
+
+function cUpd(){const n=+$("c-n").value;$("c-s").max=n;if(+$("c-s").value>n)$("c-s").value=n;const s=+$("c-s").value;
+$("c-nv").textContent=n+" 题";$("c-sv").textContent=s+" 题";
+const need=Math.ceil(0.6*n),N=n-s,k0=Math.max(0,need-s),q=.25;
+const f=[Math.pow(1-q,N)];for(let i=1;i<=N;i++)f[i]=f[i-1]*(N-i+1)/i*q/(1-q);
+let P=0;for(let i=k0;i<=N;i++)P+=f[i];
+$("c-need").textContent=`及格线 ${need} 题，需再蒙对至少 ${k0} 题（共蒙 ${N} 题）`;
+$("c-p").textContent="及格概率 "+(k0<=0?"100%":k0>N?"0%":pct(P,2));
+const mx=Math.max(...f);$("c-h").innerHTML=f.map((v,i)=>`<b class="${i>=k0?"hit":""}" style="height:${Math.max(2,v/mx*100)}%" title="蒙对${i}题：${pct(v,2)}"></b>`).join("")}
+["c-n","c-s"].forEach(k=>$(k).oninput=cUpd);cUpd();
+
+function gUpd(){const p=$("g-p").value/100,n=+$("g-n").value,r=1-Math.pow(1-p,n);
+$("g-pv").textContent=pct(p);$("g-nv").textContent=n+" 抽";$("g-r").textContent="至少出一次 "+pct(r);$("g-m").style.width=r*100+"%";
+$("g-e").textContent=`期望 ${(1/p).toFixed(0)} 抽；95% 把握约需 ${Math.ceil(Math.log(.05)/Math.log(1-p))} 抽。`}
+["g-p","g-n"].forEach(k=>$(k).oninput=gUpd);gUpd();
+$("g-sim").onclick=()=>{const p=$("g-p").value/100,n=+$("g-n").value;let tot=0,w=0;
+for(let t=0;t<1000;t++){let c=1;while(Math.random()>=p)c++;tot+=c;if(c<=n)w++}
+$("g-res").textContent=`平均 ${(tot/1000).toFixed(0)} 抽出货（理论 ${(1/p).toFixed(0)}）；${n} 抽内出货 ${pct(w/1000)}。`};
+</script>
+</body>
+</html>
